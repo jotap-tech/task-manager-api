@@ -1,15 +1,10 @@
 import { Router } from "express"
-
+import { getHealth } from "../controllers/healthController.js"
 
 const router = Router()
 
 
-router.get("/health", (req, res) => {
-  res.status(200).json({
-    status: "Success",
-    message: "API funcionando",
-  });
-});
+router.get("/health", getHealth)
 
 
 export default router

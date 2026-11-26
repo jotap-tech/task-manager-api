@@ -1,55 +1,54 @@
-import tasks from "../data/taskStore.js";
+import Task from "../models/Task.js";
 
-
-export function createTaskService(title, description) {
-  const newTask = {
-    id: Date.now(),
+export async function createTaskService(title, description) {
+  const newTask = await Task.create({
     title: title.trim(),
     description,
-    completed: false,
-    createdAt: new Date(),
-  };
-
-  tasks.push(newTask);
+  });
   return newTask;
 }
 
-export function getTasksServices() {
-  return tasks;
+export async function getTasksServices() {
+  return await Task.find();
 }
 
-export function getTaskByIdServices(taskId) {
-  const task = tasks.find((task) => task.id === taskId);
-  return task
+export async function getTaskByIdServices(taskId) {
+  const task = await Task.findById(taskId);
+  return task;
 }
 
-export function updateTaskServices(taskId, title, description) {
-  const taskIndex = tasks.findIndex((task) => task.id === taskId);
-  if (taskIndex === -1) {
-    return null;
-  }
+export async function updateTaskServices(taskId, title, description) {
+  const task = await Task.findByIdAndUpdate(
+    taskId,
+    {
+      title: title.trim(),
+      description: description.trim(),
+    },
+    {
+      returnDocument: "after",
+      runValidators: true,
+    },
+  );
 
-  tasks[taskIndex].title = title.trim();
-  tasks[taskIndex].description = description.trim();
-
-  return tasks[taskIndex];
+  return task;
 }
 
-export function updateTaskStatusService(taskId, completed) {
-  const task = tasks.find((task) => task.id === taskId);
-  if (!task) {
-    return null;
-  }
-
-  task.completed = completed;
-  return task
+export async function updateTaskStatusService(taskId, completed) {
+ const task = await Task.findByIdAndUpdate(
+    taskId,
+    {
+      completed: completed,
+    },
+    {
+      new: true,
+      runValidators: true,
+    },
+  );
+  return task;
 }
 
-export function deleteTaskServices(taskId) {
-  const taskIndex = tasks.findIndex((task) => task.id === taskId);
+export async function deleteTaskServices(taskId) {
+  const deletedTask = await Task.findByIdAndDelete(taskId);
 
-  if (taskIndex === -1) {
-    return false;
-  }
-  tasks.splice(taskIndex, 1);
+  return deletedTask;
 }

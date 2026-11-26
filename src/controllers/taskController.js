@@ -6,8 +6,9 @@ import {
   updateTaskStatusService,
   deleteTaskServices,
 } from "../services/taskService.js";
+import mongoose from "mongoose";
 
-export function createTask(req, res) {
+export async function createTask(req, res) {
   const { title, description } = req.body;
 
   if (typeof title !== "string" || !title.trim()) {
@@ -20,35 +21,57 @@ export function createTask(req, res) {
       message: "Descricao invalida",
     });
   }
-  const newTask = createTaskService(title, description);
-  return res.status(201).json(newTask);
+
+  try {
+    const newTask = await createTaskService(title, description);
+    return res.status(201).json(newTask);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Erro ao criar tarefa",
+    });
+  }
 }
 
-export function getTasks(req, res) {
-  const getTasksList = getTasksServices();
-  return res.status(200).json(getTasksList);
+export async function getTasks(req, res) {
+  try {
+    const tasks = await getTasksServices();
+    return res.status(200).json(tasks);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Erro ao buscar as tarefas",
+    });
+  }
 }
 
-export function getTaskById(req, res) {
-  const taskId = Number(req.params.id);
-  if (!Number.isInteger(taskId) || taskId <= 0) {
+export async function getTaskById(req, res) {
+  const taskId = req.params.id;
+  if (!mongoose.isObjectIdOrHexString(taskId)) {
     return res.status(400).json({
       message: "ID inválido",
     });
   }
-  const task = getTaskByIdServices(taskId);
 
-  if (!task) {
-    return res.status(404).json({
-      message: "Tarefa nao encontrada",
+  try {
+    const task = await getTaskByIdServices(taskId);
+    if (!task) {
+      return res.status(404).json({
+        message: "Tarefa nao encontrada",
+      });
+    }
+    return res.status(200).json(task);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Erro ao buscar tarefa",
     });
   }
-  return res.status(200).json(task);
 }
 
-export function updateTask(req, res) {
-  const taskId = Number(req.params.id);
-  if (!Number.isInteger(taskId) || taskId <= 0) {
+export async function updateTask(req, res) {
+  const taskId = req.params.id;
+  if (!mongoose.isObjectIdOrHexString(taskId)) {
     return res.status(400).json({
       message: "ID inválido",
     });
@@ -67,21 +90,26 @@ export function updateTask(req, res) {
       message: "Descrição inválida",
     });
   }
+  try {
+    const updatedTask = await updateTaskServices(taskId, title, description);
+    if (!updatedTask) {
+      return res.status(404).json({
+        message: "Tarefa não encontrada",
+      });
+    }
 
-  const updatedTask = updateTaskServices(taskId, title, description);
-
-  if (!updatedTask) {
-    return res.status(404).json({
-      message: "Tarefa não encontrada",
+    return res.status(200).json(updatedTask);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Erro ao editar tarefa ",
     });
   }
-
-  return res.status(200).json(updatedTask);
 }
 
-export function updateTaskStatus(req, res) {
-  const taskId = Number(req.params.id);
-  if (!Number.isInteger(taskId) || taskId <= 0) {
+export async function updateTaskStatus(req, res) {
+  const taskId = req.params.id;
+  if (!mongoose.isObjectIdOrHexString(taskId)) {
     return res.status(400).json({
       message: "ID inválido",
     });
@@ -90,37 +118,51 @@ export function updateTaskStatus(req, res) {
 
   if (typeof completed !== "boolean") {
     return res.status(400).json({
-      message: "O completed deve ser dd tipo boolean",
+      message: "O completed deve ser do tipo boolean",
     });
   }
+  try {
+    const task = await updateTaskStatusService(taskId, completed);
 
-  const task = updateTaskStatusService(taskId, completed);
+    if (!task) {
+      return res.status(404).json({
+        message: "tarefa nao encontrada",
+      });
+    }
 
-  if (!task) {
-    return res.status(404).json({
-      message: "tarefa nao encontrada",
+    return res.status(200).json(task);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Erro ao editar tarefa",
     });
   }
-
-  return res.status(200).json(task);
 }
 
-export function deleteTask(req, res) {
-  const taskId = Number(req.params.id);
-  if (!Number.isInteger(taskId) || taskId <= 0) {
+export async function deleteTask(req, res) {
+  const taskId = req.params.id;
+  if (!mongoose.isObjectIdOrHexString(taskId)) {
     return res.status(400).json({
       message: "ID inválido",
     });
   }
-  const deleted = deleteTaskServices(taskId);
 
-  if (!deleted) {
-    return res.status(404).json({
-      message: "Tarefa não encontrada",
+  try {
+    const deleted = await deleteTaskServices(taskId);
+
+    if (!deleted) {
+      return res.status(404).json({
+        message: "Tarefa não encontrada",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Tarefa excluida",
     });
+  } catch (error) {
+    console.error(error)
+    return res.status(500).json({
+      message: "Erro ao deletar tarefa"
+    })
   }
-
-  return res.status(200).json({
-    message: "Tarefa excluida",
-  });
 }
